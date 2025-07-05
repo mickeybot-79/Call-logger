@@ -213,7 +213,7 @@
             const callScript = window.sessionStorage.getItem('script')
 
             let xhr = new XMLHttpRequest()
-            xhr.open('POST', 'https://prod-25.brazilsouth.logic.azure.com:443/workflows/2a3e286fd15b43df9c95582f13d0208f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=WA9_-3E14M41BGqZQvDnx-KzTw02vZqjf26sHkr-0wI', true)
+            xhr.open('POST', '', true)
             xhr.send(`{"start": "${start}", "end": "${end}", "name": "${nameInput.value}", "number": "${numberInput.value}", "text": "${callScript}"}`)
             submitButton.disabled = true
             nameInput.value = ''
