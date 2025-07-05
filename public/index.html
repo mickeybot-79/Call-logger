@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Call logger </title>
+    <style>
+        @keyframes dot-animation {
+            0% {
+                opacity: 0%;
+            }
+
+            50% {
+                opacity: 100%;
+            }
+
+            100% {
+                opacity: 0%;
+            }
+        }
+
+        body {
+            display: grid;
+            place-content: center;
+            padding-top: 100px;
+        }
+
+        #options {
+            margin-bottom: 50px;
+        }
+
+        #inputs {
+            margin-bottom: 50px;
+            display: grid;
+        }
+
+        #name {
+            margin-bottom: 30px;
+        }
+
+        button {
+            width: 150px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+
+        button:hover {
+            background-color: rgb(194, 194, 194);
+        }
+
+        label {
+            font-size: 25px;
+        }
+
+        input {
+            height: 30px;
+            font-size: 20px;
+        }
+
+        #submit {
+            justify-self: center;
+        }
+
+        #dot {
+            margin-left: 200px;
+            margin-top: -50px;
+            margin-bottom: -20px;
+            font-size: 100px;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div id="options">
+            <button id="record">New Call</button>
+            <button id="pause" disabled>Pause</button>
+            <button id="stop" disabled>Stop recording</button>
+        </div>
+        <div id="dot" style="opacity: 0%;">•</div>
+        <div id="inputs">
+            <label for="name">Name</label>
+            <input id="name" type="text" disabled>
+            <label for="number">Phone Number</label>
+            <input id="number" type="text" disabled>
+        </div>
+        <button id="submit" disabled>Submit</button>
+    </div>
+
+    <script>
+        let mediaRecorder
+
+        let setUpReady = false
+
+        let audioChunks = []
+
+        const recordButton = document.getElementById("record")
+        const pauseButton = document.getElementById("pause")
+        const stopButton = document.getElementById("stop")
+        const submitButton = document.getElementById("submit")
+        const nameInput = document.getElementById("name")
+        const numberInput = document.getElementById("number")
+        const dotElem = document.getElementById("dot")
+
+        recordButton.addEventListener("click", startRecording)
+        pauseButton.addEventListener("click", pauseRecording)
+        stopButton.addEventListener("click", stopRecording)
+        submitButton.addEventListener("click", submitForm)
+
+        // function saveAsFile(blob) {
+        //     const url = URL.createObjectURL(blob)
+
+        //     recordButton.disabled = false
+        //     pauseButton.disabled = true
+        //     stopButton.disabled = true
+
+        //     const a = document.createElement("a")
+        //     document.body.appendChild(a)
+        //     a.style = "display: none"
+        //     a.href = url
+        //     a.download = "recording.weba"
+        //     a.click()
+
+        //     const currentTime = new Date()
+        //     a.download = `recording_${currentTime.toISOString()}.weba`
+        //     a.click()
+
+        //     window.URL.revokeObjectURL(url)
+
+        //     let request = new XMLHttpRequest()
+        //     request.open('GET', 'http://localhost:3500/transcribe', true)
+        //     request.send()
+        //     request.onload = () => {
+        //         let response = JSON.parse(request.responseText)
+        //         console.log('recording ready')
+        //         window.sessionStorage.setItem('script', response.result)
+        //         submitButton.disabled = false
+        //     }
+        //     return
+        // }
+
+        async function setupFunc() {
+            const microphoneStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    sampleSize: 100,
+                    frameRate: { max: 30 },
+                    noiseSuppression: true,
+                    echoCancellation: true,
+                    channelCount: 2
+                }
+            })
+
+            const systemAudioStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "monitor" }, audio: true })
+
+            const audioContext = new AudioContext()
+            const microphoneSource = audioContext.createMediaStreamSource(microphoneStream)
+            const systemAudioSource = audioContext.createMediaStreamSource(systemAudioStream)
+            const destination = audioContext.createMediaStreamDestination()
+
+            microphoneSource.connect(destination)
+            systemAudioSource.connect(destination)
+
+            const combinedStream = destination.stream
+
+            mediaRecorder = new MediaRecorder(combinedStream)
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data)
+            }
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+                const url = URL.createObjectURL(audioBlob)
+
+                recordButton.disabled = false
+                pauseButton.disabled = true
+                stopButton.disabled = true
+
+                const a = document.createElement("a")
+                document.body.appendChild(a)
+                a.style = "display: none"
+                a.href = url
+                a.download = "recording.weba"
+                a.click()
+
+                const currentTime = new Date()
+                a.download = `recording_${currentTime.toISOString()}.weba`
+                a.click()
+
+                window.URL.revokeObjectURL(url)
+
+                let request = new XMLHttpRequest()
+                request.open('GET', 'http://localhost:3500/transcribe', true)
+                request.send()
+                request.onload = () => {
+                    let response = JSON.parse(request.responseText)
+                    console.log('recording ready')
+                    window.sessionStorage.setItem('script', response.result)
+                    audioChunks = []
+                    submitButton.disabled = false
+                }
+            }
+            setUpReady = true
+        }
+
+        if (!setUpReady) setupFunc()
+
+        function submitForm() {
+            const start = window.sessionStorage.getItem('start')
+            const end = window.sessionStorage.getItem('end')
+            const callScript = window.sessionStorage.getItem('script')
+
+            let xhr = new XMLHttpRequest()
+            xhr.open('POST', 'https://prod-25.brazilsouth.logic.azure.com:443/workflows/2a3e286fd15b43df9c95582f13d0208f/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=WA9_-3E14M41BGqZQvDnx-KzTw02vZqjf26sHkr-0wI', true)
+            xhr.send(`{"start": "${start}", "end": "${end}", "name": "${nameInput.value}", "number": "${numberInput.value}", "text": "${callScript}"}`)
+            submitButton.disabled = true
+            nameInput.value = ''
+            numberInput.value = ''
+            nameInput.disabled = true
+            numberInput.disabled = true
+        }
+
+        async function startRecording() {
+            if (setUpReady) {
+                recordButton.disabled = true
+                nameInput.disabled = false
+                numberInput.disabled = false
+                pauseButton.disabled = false
+                stopButton.disabled = false
+                dotElem.style.animation = 'dot-animation 2s linear infinite'
+                const start = new Date()
+                window.sessionStorage.setItem('start', start.toISOString())
+                //setupFunc()
+                mediaRecorder.start()
+            }
+        }
+
+        function pauseRecording() {
+            if (mediaRecorder.state === "recording") {
+                dotElem.innerHTML = '||'
+                dotElem.style.animation = ''
+                dotElem.style.opacity = '100%'
+                console.log('pausing')
+                mediaRecorder.pause()
+                pauseButton.innerHTML = "Resume"
+            } else if (mediaRecorder.state === "paused") {
+                dotElem.innerHTML = '•'
+                dotElem.style.animation = 'dot-animation 2s linear infinite'
+                dotElem.style.opacity = '0%'
+                console.log('resuming')
+                mediaRecorder.resume()
+                pauseButton.innerHTML = "Pause"
+            }
+        }
+
+        function stopRecording() {
+            dotElem.style.animation = ''
+            dotElem.innerHTML = '•'
+            dotElem.style.opacity = '0%'
+            mediaRecorder.stop()
+            const end = new Date()
+            window.sessionStorage.setItem('end', end.toISOString())
+            recordButton.disabled = false
+            pauseButton.disabled = true
+            stopButton.disabled = true
+        }
+    </script>
+</body>
+
+</html>
