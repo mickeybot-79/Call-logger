@@ -158,7 +158,7 @@
                 a.download = `recording_${currentTime.toISOString()}.weba`
                 a.click()
 
-                //window.URL.revokeObjectURL(url)
+                window.URL.revokeObjectURL(url)
 
                 console.log('requesting transcript')
 
@@ -173,7 +173,7 @@
                 //     submitButton.disabled = false
                 // }
 
-                fetch('http://localhost:3500/transcribe', {
+                fetch('https://call-logger-hsfx.onrender.com/transcribe', {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
@@ -201,7 +201,7 @@
             const end = window.sessionStorage.getItem('end')
             const callScript = window.sessionStorage.getItem('script')
 
-            fetch('http://localhost:3500/submit', {
+            fetch('https://call-logger-hsfx.onrender.com/submit', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -268,14 +268,14 @@
             stopButton.disabled = true
         }
 
-        // setInterval(() => {
-        //     let refreshRequest = new XMLHttpRequest()
-        //     refreshRequest.open('GET', 'http://localhost:3500/refresh', true)
-        //     refreshRequest.send()
-        //     refreshRequest.onload = () => {
-        //         console.log(refreshRequest.responseText)
-        //     }
-        // }, 300000)
+        setInterval(() => {
+            let refreshRequest = new XMLHttpRequest()
+            refreshRequest.open('GET', 'https://call-logger-hsfx.onrender.com/refresh', true)
+            refreshRequest.send()
+            refreshRequest.onload = () => {
+                console.log(refreshRequest.responseText)
+            }
+        }, 300000)
     </script>
 </body>
 
