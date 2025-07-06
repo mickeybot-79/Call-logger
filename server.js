@@ -48,4 +48,8 @@ app.post('/submit', (req, res) => {
     })
 })
 
+app.get('/refresh', (req, res) => {
+    res.send('refreshed')
+})
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

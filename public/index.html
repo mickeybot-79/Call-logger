@@ -189,7 +189,7 @@
                     'Content-Type': 'application/json; charset=UTF-8'
                 },
                 body: JSON.stringify({
-                    start:start,
+                    start: start,
                     end: end,
                     name: nameInput.value,
                     number: numberInput.value,
@@ -248,6 +248,15 @@
             pauseButton.disabled = true
             stopButton.disabled = true
         }
+
+        setInterval(() => {
+            let refreshRequest = new XMLHttpRequest()
+            refreshRequest.open('GET', 'http://localhost:3500/refresh', true)
+            refreshRequest.send()
+            refreshRequest.onload = () => {
+                console.log(refreshRequest.responseText)
+            }
+        }, 300000)
     </script>
 </body>
 
