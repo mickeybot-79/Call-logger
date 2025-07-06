@@ -162,7 +162,7 @@
                 console.log('requesting transcript')
 
                 let request = new XMLHttpRequest()
-                request.open('GET', 'http://localhost:3500/transcribe', true)
+                request.open('GET', 'https://call-logger-hsfx.onrender.com/transcribe', true)
                 request.send()
                 request.onload = () => {
                     let response = JSON.parse(request.responseText)
@@ -182,7 +182,7 @@
             const end = window.sessionStorage.getItem('end')
             const callScript = window.sessionStorage.getItem('script')
 
-            fetch('http://localhost:3500/submit', {
+            fetch('https://call-logger-hsfx.onrender.com/submit', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -251,7 +251,7 @@
 
         setInterval(() => {
             let refreshRequest = new XMLHttpRequest()
-            refreshRequest.open('GET', 'http://localhost:3500/refresh', true)
+            refreshRequest.open('GET', 'https://call-logger-hsfx.onrender.com/refresh', true)
             refreshRequest.send()
             refreshRequest.onload = () => {
                 console.log(refreshRequest.responseText)
