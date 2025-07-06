@@ -139,6 +139,7 @@
             }
 
             mediaRecorder.onstop = () => {
+                console.log(audioChunks)
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
                 const url = URL.createObjectURL(audioBlob)
 
@@ -157,20 +158,38 @@
                 a.download = `recording_${currentTime.toISOString()}.weba`
                 a.click()
 
-                window.URL.revokeObjectURL(url)
+                //window.URL.revokeObjectURL(url)
 
                 console.log('requesting transcript')
 
-                let request = new XMLHttpRequest()
-                request.open('GET', 'https://call-logger-hsfx.onrender.com/transcribe', true)
-                request.send()
-                request.onload = () => {
-                    let response = JSON.parse(request.responseText)
-                    console.log('recording ready')
-                    window.sessionStorage.setItem('script', response.result)
-                    audioChunks = []
-                    submitButton.disabled = false
-                }
+                // let request = new XMLHttpRequest()
+                // request.open('GET', 'http://localhost:3500/transcribe', true)
+                // request.send('TEST')
+                // request.onload = () => {
+                //     let response = JSON.parse(request.responseText)
+                //     console.log('recording ready')
+                //     window.sessionStorage.setItem('script', response.result)
+                //     audioChunks = []
+                //     submitButton.disabled = false
+                // }
+
+                fetch('http://localhost:3500/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json; charset=UTF-8'
+                    },
+                    // body: JSON.stringify({
+                    //     audio: 'TEST'
+                    // })
+                })
+                    .then(response => response.json())
+                    .then(response => {
+                        window.sessionStorage.setItem('script', response.result)
+                        audioChunks = []
+                        submitButton.disabled = false
+                        window.URL.revokeObjectURL(url)
+                    })
             }
             setUpReady = true
         }
@@ -182,7 +201,7 @@
             const end = window.sessionStorage.getItem('end')
             const callScript = window.sessionStorage.getItem('script')
 
-            fetch('https://call-logger-hsfx.onrender.com/submit', {
+            fetch('http://localhost:3500/submit', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -249,14 +268,14 @@
             stopButton.disabled = true
         }
 
-        setInterval(() => {
-            let refreshRequest = new XMLHttpRequest()
-            refreshRequest.open('GET', 'https://call-logger-hsfx.onrender.com/refresh', true)
-            refreshRequest.send()
-            refreshRequest.onload = () => {
-                console.log(refreshRequest.responseText)
-            }
-        }, 300000)
+        // setInterval(() => {
+        //     let refreshRequest = new XMLHttpRequest()
+        //     refreshRequest.open('GET', 'http://localhost:3500/refresh', true)
+        //     refreshRequest.send()
+        //     refreshRequest.onload = () => {
+        //         console.log(refreshRequest.responseText)
+        //     }
+        // }, 300000)
     </script>
 </body>
 
