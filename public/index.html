@@ -109,38 +109,6 @@
         stopButton.addEventListener("click", stopRecording)
         submitButton.addEventListener("click", submitForm)
 
-        // function saveAsFile(blob) {
-        //     const url = URL.createObjectURL(blob)
-
-        //     recordButton.disabled = false
-        //     pauseButton.disabled = true
-        //     stopButton.disabled = true
-
-        //     const a = document.createElement("a")
-        //     document.body.appendChild(a)
-        //     a.style = "display: none"
-        //     a.href = url
-        //     a.download = "recording.weba"
-        //     a.click()
-
-        //     const currentTime = new Date()
-        //     a.download = `recording_${currentTime.toISOString()}.weba`
-        //     a.click()
-
-        //     window.URL.revokeObjectURL(url)
-
-        //     let request = new XMLHttpRequest()
-        //     request.open('GET', 'http://localhost:3500/transcribe', true)
-        //     request.send()
-        //     request.onload = () => {
-        //         let response = JSON.parse(request.responseText)
-        //         console.log('recording ready')
-        //         window.sessionStorage.setItem('script', response.result)
-        //         submitButton.disabled = false
-        //     }
-        //     return
-        // }
-
         async function setupFunc() {
             const microphoneStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -191,6 +159,8 @@
 
                 window.URL.revokeObjectURL(url)
 
+                console.log('requesting transcript')
+
                 let request = new XMLHttpRequest()
                 request.open('GET', 'http://localhost:3500/transcribe', true)
                 request.send()
@@ -212,9 +182,21 @@
             const end = window.sessionStorage.getItem('end')
             const callScript = window.sessionStorage.getItem('script')
 
-            let xhr = new XMLHttpRequest()
-            xhr.open('POST', '', true)
-            xhr.send(`{"start": "${start}", "end": "${end}", "name": "${nameInput.value}", "number": "${numberInput.value}", "text": "${callScript}"}`)
+            fetch('http://localhost:3500/submit', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json; charset=UTF-8'
+                },
+                body: JSON.stringify({
+                    start:start,
+                    end: end,
+                    name: nameInput.value,
+                    number: numberInput.value,
+                    callScript: callScript
+                })
+            })
+
             submitButton.disabled = true
             nameInput.value = ''
             numberInput.value = ''

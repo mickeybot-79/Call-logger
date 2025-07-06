@@ -19,27 +19,33 @@ app.get('/transcribe', async (req, res) => {
         apiKey: process.env.ASSEMBLYAI,
     })
 
-    setTimeout(async () => {
+    const params = {
+        audio: "C:/Users/user/Downloads/recording.weba",
+        speech_model: "universal",
+    }
 
-        const params = {
-            audio: "C:/Users/user/Downloads/recording.weba",
-            speech_model: "universal",
-        }
+    console.log('requesting transcript')
+    const transcript = await client.transcripts.transcribe(params)
 
-        const transcript = await client.transcripts.transcribe(params)
-
+    if (transcript?.text) {
         fs.unlink(params.audio,
             err => {
                 if (err) console.log(err)
             }
         )
+        console.log('sending response')
+        res.send({ 'result': transcript.text })
+    }
+    //res.send({ 'result': 'test response' })
 
-        if (transcript?.text) {
-            console.log('sending response')
-            res.send({ 'result': transcript.text })
-        }
-    }, 500)
+})
 
+app.post('/submit', (req, res) => {
+    const { start, end, name, number, callScript } = req.body
+    fetch(process.env.FLOW_URL, {
+        method: 'POST',
+        body: `{"start": "${start}", "end": "${end}", "name": "${name}", "number": "${number}", "text": "${callScript}"}`
+    })
 })
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
